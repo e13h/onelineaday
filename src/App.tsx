@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, Save } from 'lucide-react';
 import { MonthButton } from './components/MonthButton';
 import { DayButton } from './components/DayButton';
 import { JournalEntry } from './components/JournalEntry';
@@ -18,6 +18,7 @@ function App() {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [entries, setEntries] = useState<JournalEntryType[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const years = Array.from({ length: 4 }, (_, i) => 2021 + i);
   const currentYear = new Date().getFullYear();
@@ -60,6 +61,41 @@ function App() {
 
   const getEntryForDate = (date: string, year: number): string => {
     return entries.find(entry => entry.date === date && entry.year === year)?.message || '';
+  };
+
+  const handleSave = async () => {
+    if (!selectedMonth || !selectedDay) return;
+    console.log("we are going to save something!");
+    setIsSaving(true);
+    try {
+      const entriesToSave = years.map(year => {
+        const date = `${year}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+        return {
+          date,
+          message: getEntryForDate(date, year),
+          year
+        };
+      }).filter(entry => entry.message);
+
+      const response = await fetch('/api/entries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(entriesToSave),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save entries');
+      }
+
+      alert('Entries saved successfully!');
+    } catch (error) {
+      console.error('Error saving entries:', error);
+      alert('Failed to save entries. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -115,16 +151,26 @@ function App() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setSelectedDay(null)}
+                  className="text-indigo-600 hover:text-indigo-800 font-medium"
+                >
+                  ← Back to days
+                </button>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {MONTHS[selectedMonth]} {selectedDay}
+                </h2>
+              </div>
               <button
-                onClick={() => setSelectedDay(null)}
-                className="text-indigo-600 hover:text-indigo-800 font-medium"
+                onClick={handleSave}
+                disabled={isSaving}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                ← Back to days
+                <Save className="w-5 h-5" />
+                <span>{isSaving ? 'Saving...' : 'Save Entries'}</span>
               </button>
-              <h2 className="text-2xl font-bold text-gray-900">
-                {MONTHS[selectedMonth]} {selectedDay}
-              </h2>
             </div>
             <div className="space-y-6">
               {years.map(year => {
