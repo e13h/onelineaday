@@ -1,0 +1,19 @@
+services:
+  web:
+    build: .
+    ports:
+      - "80:80"
+    restart: unless-stopped
+  
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: journal
+      POSTGRES_USER: journaluser
+      POSTGRES_PASSWORD: your_secure_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
