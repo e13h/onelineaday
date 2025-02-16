@@ -18,6 +18,7 @@ const pool = new Pool({
 
 app.post('/api/entries', async (req, res) => {
   const entries = req.body;
+  console.log('Received entries:', entries);
   
   try {
     await pool.query('BEGIN');

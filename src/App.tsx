@@ -64,18 +64,26 @@ function App() {
   };
 
   const handleSave = async () => {
-    if (!selectedMonth || !selectedDay) return;
-    console.log("we are going to save something!");
+    if (selectedMonth === null || selectedDay === null) return;
     setIsSaving(true);
     try {
       const entriesToSave = years.map(year => {
         const date = `${year}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+        const message = getEntryForDate(date, year);
         return {
           date,
-          message: getEntryForDate(date, year),
+          message,
           year
         };
       }).filter(entry => entry.message);
+
+      if (entriesToSave.length === 0) {
+        alert('No entries to save!');
+        setIsSaving(false);
+        return;
+      }
+
+      console.log('Saving entries:', entriesToSave);
 
       const response = await fetch('/api/entries', {
         method: 'POST',
@@ -86,10 +94,15 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save entries');
+        throw new Error(`Failed to save entries: ${response.statusText}`);
       }
 
-      alert('Entries saved successfully!');
+      const result = await response.json();
+      if (result.success) {
+        alert('Entries saved successfully!');
+      } else {
+        throw new Error('Failed to save entries');
+      }
     } catch (error) {
       console.error('Error saving entries:', error);
       alert('Failed to save entries. Please try again.');
