@@ -16,6 +16,24 @@ const pool = new Pool({
   port: parseInt(process.env.POSTGRES_PORT || '5432'),
 });
 
+app.get('/api/entries/:month', async (req, res) => {
+  const month = req.params.month;
+  try {
+    const result = await pool.query(
+      `SELECT date::text, message, year 
+       FROM journal_entries 
+       WHERE EXTRACT(MONTH FROM date) = $1
+       ORDER BY date, year`,
+      [month]
+    );
+    console.log('Fetched entries:', result.rows); // Debug log
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching entries:', error);
+    res.status(500).json({ error: 'Failed to fetch entries' });
+  }
+});
+
 app.post('/api/entries', async (req, res) => {
   const entries = req.body;
   console.log('Received entries:', entries);

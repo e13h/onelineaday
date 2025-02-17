@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Upload, Save } from 'lucide-react';
 import { MonthButton } from './components/MonthButton';
 import { DayButton } from './components/DayButton';
@@ -19,9 +19,48 @@ function App() {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [entries, setEntries] = useState<JournalEntryType[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const years = Array.from({ length: 4 }, (_, i) => 2021 + i);
   const currentYear = new Date().getFullYear();
+
+  useEffect(() => {
+    if (selectedMonth !== null) {
+      fetchEntriesForMonth(selectedMonth + 1);
+    }
+  }, [selectedMonth]);
+
+  const fetchEntriesForMonth = async (month: number) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/entries/${month}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch entries');
+      }
+      const data = await response.json();
+      console.log('Fetched entries:', data); // Debug log
+      setEntries(data);
+    } catch (error) {
+      console.error('Error fetching entries:', error);
+      alert('Failed to fetch entries. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getEntryCountForDay = (day: number): number => {
+    if (!entries || entries.length === 0) return 0;
+    
+    const formattedDay = String(day).padStart(2, '0');
+    const monthStr = String(selectedMonth! + 1).padStart(2, '0');
+    
+    const count = entries.filter(entry => {
+      const [year, month, entryDay] = entry.date.split('-');
+      return entryDay === formattedDay && month === monthStr;
+    }).length;
+    
+    return count;
+  };
 
   const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -36,7 +75,7 @@ function App() {
           message: item.message,
           year: new Date(item.date).getFullYear()
         }));
-        setEntries([...entries, ...newEntries]);
+        setEntries(prevEntries => [...prevEntries, ...newEntries]);
       } catch (error) {
         console.error('Error importing data:', error);
         alert('Error importing data. Please check the file format.');
@@ -46,21 +85,25 @@ function App() {
   };
 
   const handleEntryChange = (date: string, year: number, message: string) => {
-    const existingEntryIndex = entries.findIndex(
-      entry => entry.date === date && entry.year === year
-    );
+    setEntries(prevEntries => {
+      const existingEntryIndex = prevEntries.findIndex(
+        entry => entry.date === date && entry.year === year
+      );
 
-    if (existingEntryIndex >= 0) {
-      const newEntries = [...entries];
-      newEntries[existingEntryIndex] = { date, year, message };
-      setEntries(newEntries);
-    } else {
-      setEntries([...entries, { date, year, message }]);
-    }
+      if (existingEntryIndex >= 0) {
+        const newEntries = [...prevEntries];
+        newEntries[existingEntryIndex] = { date, year, message };
+        return newEntries;
+      } else {
+        return [...prevEntries, { date, year, message }];
+      }
+    });
   };
 
   const getEntryForDate = (date: string, year: number): string => {
-    return entries.find(entry => entry.date === date && entry.year === year)?.message || '';
+    const entry = entries.find(entry => entry.date === date && entry.year === year);
+    console.log('Getting entry for date:', date, 'year:', year, 'found:', entry); // Debug log
+    return entry?.message || '';
   };
 
   const handleSave = async () => {
@@ -100,6 +143,8 @@ function App() {
       const result = await response.json();
       if (result.success) {
         alert('Entries saved successfully!');
+        // Refresh entries for the current month
+        await fetchEntriesForMonth(selectedMonth + 1);
       } else {
         throw new Error('Failed to save entries');
       }
@@ -109,6 +154,12 @@ function App() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleMonthSelect = (index: number) => {
+    setSelectedMonth(index);
+    setSelectedDay(null);
+    setEntries([]); // Clear entries when changing months
   };
 
   return (
@@ -134,7 +185,7 @@ function App() {
               <MonthButton
                 key={month}
                 month={month}
-                onClick={() => setSelectedMonth(index)}
+                onClick={() => handleMonthSelect(index)}
               />
             ))}
           </div>
@@ -149,18 +200,29 @@ function App() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
               {MONTHS[selectedMonth]}
             </h2>
-            <div className="grid grid-cols-7 gap-2">
-              {Array.from(
-                { length: getDaysInMonth(selectedMonth, currentYear) },
-                (_, i) => i + 1
-              ).map((day) => (
-                <DayButton
-                  key={day}
-                  day={day}
-                  onClick={() => setSelectedDay(day)}
-                />
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="text-lg text-gray-600">Loading entries...</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-7 gap-2">
+                {Array.from(
+                  { length: getDaysInMonth(selectedMonth, currentYear) },
+                  (_, i) => i + 1
+                ).map((day) => {
+                  const count = getEntryCountForDay(day);
+                  console.log(`Day ${day} has ${count} entries`); // Debug log
+                  return (
+                    <DayButton
+                      key={day}
+                      day={day}
+                      onClick={() => setSelectedDay(day)}
+                      entryCount={count}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-6">
@@ -188,11 +250,13 @@ function App() {
             <div className="space-y-6">
               {years.map(year => {
                 const date = `${year}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+                const value = getEntryForDate(date, year);
+                console.log('Rendering entry for date:', date, 'value:', value); // Debug log
                 return (
                   <JournalEntry
                     key={year}
                     year={year}
-                    value={getEntryForDate(date, year)}
+                    value={value}
                     onChange={(message) => handleEntryChange(date, year, message)}
                   />
                 );
