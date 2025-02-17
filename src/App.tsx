@@ -11,7 +11,7 @@ const MONTHS = [
 ];
 
 function getDaysInMonth(month: number, year: number): number {
-  return new Date(year, month + 1, 0).getDate();
+  return new Date(year, month + 1, 0).getUTCDate();
 }
 
 function App() {
@@ -21,8 +21,8 @@ function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const years = Array.from({ length: 4 }, (_, i) => 2021 + i);
-  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => 2021 + i);
+  const currentYear = new Date().getUTCFullYear();
 
   useEffect(() => {
     if (selectedMonth !== null) {
@@ -38,7 +38,7 @@ function App() {
         throw new Error('Failed to fetch entries');
       }
       const data = await response.json();
-      console.log('Fetched entries:', data); // Debug log
+      console.log('Fetched entries:', data);
       setEntries(data);
     } catch (error) {
       console.error('Error fetching entries:', error);
@@ -62,23 +62,47 @@ function App() {
     return count;
   };
 
-  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const importedData = JSON.parse(e.target?.result as string) as ImportData[];
-        const newEntries = importedData.map(item => ({
+        const entriesToSave = importedData.map(item => ({
           date: item.date,
           message: item.message,
-          year: new Date(item.date).getFullYear()
+          year: new Date(item.date).getUTCFullYear()
         }));
-        setEntries(prevEntries => [...prevEntries, ...newEntries]);
+
+        setIsSaving(true);
+        const response = await fetch('/api/entries', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(entriesToSave),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save imported entries');
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          alert('Entries imported and saved successfully!');
+          if (selectedMonth !== null) {
+            await fetchEntriesForMonth(selectedMonth + 1);
+          }
+        } else {
+          throw new Error('Failed to save imported entries');
+        }
       } catch (error) {
         console.error('Error importing data:', error);
         alert('Error importing data. Please check the file format.');
+      } finally {
+        setIsSaving(false);
       }
     };
     reader.readAsText(file);
@@ -102,7 +126,7 @@ function App() {
 
   const getEntryForDate = (date: string, year: number): string => {
     const entry = entries.find(entry => entry.date === date && entry.year === year);
-    console.log('Getting entry for date:', date, 'year:', year, 'found:', entry); // Debug log
+    console.log('Getting entry for date:', date, 'year:', year, 'found:', entry);
     return entry?.message || '';
   };
 
@@ -143,7 +167,6 @@ function App() {
       const result = await response.json();
       if (result.success) {
         alert('Entries saved successfully!');
-        // Refresh entries for the current month
         await fetchEntriesForMonth(selectedMonth + 1);
       } else {
         throw new Error('Failed to save entries');
@@ -159,7 +182,7 @@ function App() {
   const handleMonthSelect = (index: number) => {
     setSelectedMonth(index);
     setSelectedDay(null);
-    setEntries([]); // Clear entries when changing months
+    setEntries([]);
   };
 
   return (
@@ -167,14 +190,15 @@ function App() {
       <div className="max-w-6xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">One Line a Day Journal</h1>
-          <label className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors">
+          <label className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ opacity: isSaving ? 0.5 : 1, pointerEvents: isSaving ? 'none' : 'auto' }}>
             <Upload className="w-5 h-5" />
-            <span>Import Data</span>
+            <span>{isSaving ? 'Importing...' : 'Import Data'}</span>
             <input
               type="file"
               accept=".json"
               onChange={handleFileImport}
               className="hidden"
+              disabled={isSaving}
             />
           </label>
         </div>
@@ -211,7 +235,7 @@ function App() {
                   (_, i) => i + 1
                 ).map((day) => {
                   const count = getEntryCountForDay(day);
-                  console.log(`Day ${day} has ${count} entries`); // Debug log
+                  console.log(`Day ${day} has ${count} entries`);
                   return (
                     <DayButton
                       key={day}
@@ -251,7 +275,7 @@ function App() {
               {years.map(year => {
                 const date = `${year}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
                 const value = getEntryForDate(date, year);
-                console.log('Rendering entry for date:', date, 'value:', value); // Debug log
+                console.log('Rendering entry for date:', date, 'value:', value);
                 return (
                   <JournalEntry
                     key={year}
