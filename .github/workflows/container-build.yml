@@ -17,6 +17,7 @@ jobs:
     strategy:
       matrix:
         target: [frontend, backend]
+        platform: [linux/amd64, linux/arm64]
         include:
           - os: ubuntu-latest
             platform: linux/amd64
