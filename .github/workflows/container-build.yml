@@ -106,7 +106,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}-${{ matrix.target }
+            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}-${{ matrix.target }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
