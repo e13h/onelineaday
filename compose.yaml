@@ -12,8 +12,6 @@ services:
     build:
       context: .
       target: backend
-    ports:
-      - "3000:3000"
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -22,7 +20,8 @@ services:
       - POSTGRES_PORT=5432
       - PORT=3000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:16-alpine
@@ -32,7 +31,13 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./supabase/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 1s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+      start_interval: 1s
 
 volumes:
   postgres_data:

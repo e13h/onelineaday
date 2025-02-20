@@ -2,6 +2,8 @@ import express from 'express';
 import pg from 'pg';
 const { Pool } = pg;
 import { config } from 'dotenv';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 config();
 
@@ -15,6 +17,20 @@ const pool = new Pool({
   password: process.env.POSTGRES_PASSWORD,
   port: parseInt(process.env.POSTGRES_PORT || '5432'),
 });
+
+async function runMigrations() {
+  try {
+    console.log('Running database migrations...');
+    const migrationPath = join(process.cwd(), 'db_schema.sql');
+    const migrationSQL = readFileSync(migrationPath, 'utf8');
+    
+    await pool.query(migrationSQL);
+    console.log('Migrations completed successfully');
+  } catch (error) {
+    console.error('Error running migrations:', error);
+    throw error;
+  }
+}
 
 app.get('/api/entries/:month', async (req, res) => {
   const month = req.params.month;
@@ -61,6 +77,15 @@ app.post('/api/entries', async (req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+
+// Run migrations before starting the server
+runMigrations()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Failed to start server due to migration error:', error);
+    process.exit(1);
+  });

@@ -1,20 +1,3 @@
-/*
-  # Create journal entries table
-
-  1. New Table
-    - `journal_entries`
-      - `id` (serial, primary key)
-      - `date` (date, not null)
-      - `message` (text, not null)
-      - `year` (integer, not null)
-      - `created_at` (timestamp with time zone, default: now())
-      - `updated_at` (timestamp with time zone, default: now())
-
-  2. Indexes
-    - Unique constraint on date and year combination
-    - Index on year for faster queries
-*/
-
 CREATE TABLE IF NOT EXISTS journal_entries (
     id SERIAL PRIMARY KEY,
     date DATE NOT NULL,
@@ -35,6 +18,9 @@ BEGIN
     RETURN NEW;
 END;
 $$ language 'plpgsql';
+
+-- Drop the trigger if it exists
+DROP TRIGGER IF EXISTS update_journal_entries_updated_at ON journal_entries;
 
 -- Trigger to automatically update the updated_at column
 CREATE TRIGGER update_journal_entries_updated_at
