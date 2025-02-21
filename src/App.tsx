@@ -192,7 +192,7 @@ function App() {
           <h1 className="text-3xl font-bold text-gray-900">One Line a Day Journal</h1>
           <label className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" style={{ opacity: isSaving ? 0.5 : 1, pointerEvents: isSaving ? 'none' : 'auto' }}>
             <Upload className="w-5 h-5" />
-            <span>{isSaving ? 'Importing...' : 'Import Data'}</span>
+            <span>{isSaving ? 'Importing...' : 'Import'}</span>
             <input
               type="file"
               accept=".json"
@@ -229,7 +229,7 @@ function App() {
                 <div className="text-lg text-gray-600">Loading entries...</div>
               </div>
             ) : (
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3 sm:gap-4">
                 {Array.from(
                   { length: getDaysInMonth(selectedMonth, currentYear) },
                   (_, i) => i + 1
@@ -268,7 +268,7 @@ function App() {
                 className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="w-5 h-5" />
-                <span>{isSaving ? 'Saving...' : 'Save Entries'}</span>
+                <span>{isSaving ? 'Saving...' : 'Save'}</span>
               </button>
             </div>
             <div className="space-y-6">

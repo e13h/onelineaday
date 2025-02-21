@@ -10,7 +10,7 @@ export function DayButton({ day, onClick, entryCount }: DayButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="relative p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 w-16 h-16 flex items-center justify-center hover:bg-indigo-50"
+      className="relative p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 w-full aspect-square flex items-center justify-center hover:bg-indigo-50"
     >
       <span className="text-lg font-medium text-gray-800">{day}</span>
       {entryCount > 0 && (
