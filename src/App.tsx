@@ -10,8 +10,9 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-function getDaysInMonth(month: number, year: number): number {
-  return new Date(year, month + 1, 0).getUTCDate();
+function getDaysInMonth(month: number): number {
+  const leapYear = 2020;
+  return new Date(leapYear, month + 1, 0).getUTCDate();
 }
 
 function App() {
@@ -22,7 +23,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
 
   const years = Array.from({ length: 5 }, (_, i) => 2021 + i);
-  const currentYear = new Date().getUTCFullYear();
 
   useEffect(() => {
     if (selectedMonth !== null) {
@@ -231,7 +231,7 @@ function App() {
             ) : (
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3 sm:gap-4">
                 {Array.from(
-                  { length: getDaysInMonth(selectedMonth, currentYear) },
+                  { length: getDaysInMonth(selectedMonth) },
                   (_, i) => i + 1
                 ).map((day) => {
                   const count = getEntryCountForDay(day);
