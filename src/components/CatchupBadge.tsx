@@ -19,7 +19,7 @@ export default function CatchupBadge({ count, side }: CatchupBadgeProps) {
       >
         <div className="text-xs font-semibold leading-tight">{count}</div>
         <div className="text-xs opacity-75 mt-1">
-          {side === 'left' ? 'days ago' : 'days ahead'}
+          {count > 1 ? 'entries missing' : 'entry missing'}
         </div>
       </div>
     </div>
