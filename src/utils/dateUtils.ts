@@ -1,5 +1,6 @@
 export function formatDateDisplay(dateString: string): string {
-  const date = new Date(dateString + 'T00:00:00Z');
+  const [year, month, day] = dateString.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
   const options: Intl.DateTimeFormatOptions = {
     weekday: 'long',
     year: 'numeric',
@@ -25,15 +26,16 @@ export function getCatchupCounts(
 ): { previousCount: number; nextCount: number } {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayString = today.toISOString().split('T')[0];
 
-  const current = new Date(currentDate);
+  const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
+  const current = new Date(currentYear, currentMonth - 1, currentDay);
   current.setHours(0, 0, 0, 0);
 
   let previousCount = 0;
   let nextCount = 0;
 
-  const startDateObj = new Date(startDate);
+  const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
+  const startDateObj = new Date(startYear, startMonth - 1, startDay);
   startDateObj.setHours(0, 0, 0, 0);
 
   const checkDate = new Date(current);
@@ -65,21 +67,15 @@ export function getOnThisDayEntries(
   currentDate: string,
   entries: Record<string, string>
 ): Array<{ date: string; message: string; year: number }> {
-  const currentMonth = currentDate.substring(5, 10);
-  const currentYear = parseInt(currentDate.substring(0, 4));
-
+  const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
   const results: Array<{ date: string; message: string; year: number }> = [];
-
   for (const [date, message] of Object.entries(entries)) {
-    const month = date.substring(5, 10);
-    const year = parseInt(date.substring(0, 4));
-
-    if (month === currentMonth && year < currentYear) {
+    const [year, month, day] = date.split("-").map(Number);
+    if (month === currentMonth && day === currentDay && year < currentYear) {
       results.push({ date, message, year });
     }
   }
 
   results.sort((a, b) => b.year - a.year);
-
   return results;
 }

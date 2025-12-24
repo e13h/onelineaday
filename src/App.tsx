@@ -25,7 +25,8 @@ function App() {
   const { syncWithServer, isSyncing, lastSyncTime } = useSync(entries);
   const { handleWheel, handleTouchStart, handleTouchEnd } = useGestures(
     (offset) => {
-      const newDate = new Date(currentDate);
+      const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
+      const newDate = new Date(currentYear, currentMonth - 1, currentDay);
       newDate.setDate(newDate.getDate() + offset);
       setCurrentDate(newDate.toISOString().split('T')[0]);
       setEditing(false);
@@ -143,14 +144,6 @@ function App() {
     startDate || today
   );
 
-  const previousMonth = new Date(currentDate);
-  previousMonth.setMonth(previousMonth.getMonth() - 1);
-  const previousMonthDate = previousMonth.toISOString().split('T')[0];
-
-  const nextMonth = new Date(currentDate);
-  nextMonth.setMonth(nextMonth.getMonth() + 1);
-  const nextMonthDate = nextMonth.toISOString().split('T')[0];
-
   return (
     <div
       ref={containerRef}
@@ -198,8 +191,8 @@ function App() {
             <div className="flex items-center justify-between">
               <button
                 onClick={() => {
-                  const prev = new Date(currentDate);
-                  prev.setDate(prev.getDate() - 1);
+                  const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
+                  const prev = new Date(currentYear, currentMonth - 1, currentDay - 1);
                   setCurrentDate(prev.toISOString().split('T')[0]);
                   setEditing(false);
                 }}
@@ -223,8 +216,8 @@ function App() {
 
               <button
                 onClick={() => {
-                  const next = new Date(currentDate);
-                  next.setDate(next.getDate() + 1);
+                  const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
+                  const next = new Date(currentYear, currentMonth - 1, currentDay + 1);
                   setCurrentDate(next.toISOString().split('T')[0]);
                   setEditing(false);
                 }}
