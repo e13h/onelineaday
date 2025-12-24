@@ -117,6 +117,7 @@ function App() {
         alert('Invalid JSON format');
         return;
       }
+      console.log(`Parsed ${data.length} rows of data!`);
 
       const imported = await importData(data);
       setEntries(imported);

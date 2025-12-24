@@ -134,11 +134,29 @@ export function useDB() {
           });
         }
 
-        fetch('/api/import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ entries: data }),
-        }).catch((error) => console.error('Error syncing import to server:', error));
+        // Send data to server in chunks to avoid payload size limits
+        const CHUNK_SIZE = 50;
+        const chunks = [];
+        for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+          chunks.push(data.slice(i, i + CHUNK_SIZE));
+        }
+
+        // Process chunks sequentially to avoid overwhelming the server
+        for (let i = 0; i < chunks.length; i++) {
+          try {
+            await fetch('/api/import', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                entries: chunks[i],
+                chunkIndex: i,
+                totalChunks: chunks.length
+              }),
+            });
+          } catch (error) {
+            console.error(`Error syncing chunk ${i + 1}/${chunks.length} to server:`, error);
+          }
+        }
 
         return result;
       } catch (error) {

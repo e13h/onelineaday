@@ -15,16 +15,40 @@ export function useSync(entries: Record<string, string>) {
           message,
         }));
 
-        const response = await fetch('/api/import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ entries: entryArray }),
-        });
+        // Send data in chunks to avoid payload size limits
+        const CHUNK_SIZE = 50;
+        const chunks = [];
+        for (let i = 0; i < entryArray.length; i += CHUNK_SIZE) {
+          chunks.push(entryArray.slice(i, i + CHUNK_SIZE));
+        }
 
-        if (response.ok) {
+        let allSuccessful = true;
+
+        // Process chunks sequentially
+        for (let i = 0; i < chunks.length; i++) {
+          try {
+            const response = await fetch('/api/import', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                entries: chunks[i],
+                chunkIndex: i,
+                totalChunks: chunks.length
+              }),
+            });
+
+            if (!response.ok) {
+              console.error(`Sync failed for chunk ${i + 1}/${chunks.length}:`, response.statusText);
+              allSuccessful = false;
+            }
+          } catch (error) {
+            console.error(`Error syncing chunk ${i + 1}/${chunks.length} with server:`, error);
+            allSuccessful = false;
+          }
+        }
+
+        if (allSuccessful) {
           setLastSyncTime(Date.now());
-        } else {
-          console.error('Sync failed:', response.statusText);
         }
       } catch (error) {
         console.error('Error syncing with server:', error);
