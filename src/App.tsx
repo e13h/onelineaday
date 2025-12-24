@@ -231,7 +231,7 @@ function App() {
         </div>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col sm:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-row overflow-hidden">
           {/* Left sidebar - Previous catchup count */}
           <CatchupBadge count={previousCount} side="left" />
 
