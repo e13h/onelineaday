@@ -27,7 +27,7 @@ export default function EntryEditor({
 
   // Auto-save effect for new entries
   useEffect(() => {
-    if (isNew && message.trim() && message !== initialMessage && !isSaving) {
+    if (message !== initialMessage && !isSaving) {
       // Clear any existing timeout
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
@@ -46,7 +46,7 @@ export default function EntryEditor({
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [isNew, message, initialMessage, isSaving, date, onSave]);
+  }, [message, initialMessage, isSaving, date, onSave]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newMessage = e.target.value;
@@ -70,40 +70,27 @@ export default function EntryEditor({
         autoFocus
       />
 
-      {isNew && (
-        <div className="px-6 pb-4 flex items-center justify-between border-t border-slate-200">
-          <p className="text-xs text-slate-500">Start typing to save automatically</p>
-          {!isSaving && message.trim() && (
-            <div className="flex items-center gap-2 text-xs text-green-600">
-              <Check size={14} />
-              Ready to save
-            </div>
-          )}
-          {isSaving && (
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              Saving...
-            </div>
-          )}
-        </div>
-      )}
-
-      {!isNew && (
-        <div className="px-6 pb-4 flex items-center justify-between border-t border-slate-200">
-          <p className="text-xs text-slate-500">
-            {hasChanged ? 'Changes made' : 'No changes'}
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={handleSave}
-              disabled={!hasChanged || isSaving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-            >
-              {isSaving ? 'Saving...' : 'Save'}
-            </button>
+      <div className="px-6 pb-4 flex items-center justify-between border-t border-slate-200">
+        <p className="text-xs text-slate-500">Start typing to save automatically</p>
+        {!isSaving && !hasChanged && (
+          <div className="flex items-center gap-2 text-xs text-green-600">
+            <Check size={14} />
+            Ready to save
           </div>
-        </div>
-      )}
+        )}
+        {!isSaving && hasChanged && (
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Check size={14} />
+            Changes made
+          </div>
+        )}
+        {isSaving && (
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            Saving...
+          </div>
+        )}
+      </div>
     </div>
   );
 }
