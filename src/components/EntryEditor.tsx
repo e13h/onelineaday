@@ -5,7 +5,6 @@ interface EntryEditorProps {
   date: string;
   initialMessage: string;
   onSave: (date: string, message: string) => Promise<void>;
-  isNew: boolean;
   isSaving: boolean;
 }
 
@@ -13,7 +12,6 @@ export default function EntryEditor({
   date,
   initialMessage,
   onSave,
-  isNew,
   isSaving,
 }: EntryEditorProps) {
   const [message, setMessage] = useState(initialMessage);
@@ -52,11 +50,6 @@ export default function EntryEditor({
     const newMessage = e.target.value;
     setMessage(newMessage);
     setHasChanged(newMessage !== initialMessage);
-  };
-
-  const handleSave = async () => {
-    await onSave(date, message.trim());
-    setHasChanged(false);
   };
 
   return (

@@ -273,7 +273,6 @@ function App() {
                     date={currentDate}
                     initialMessage={currentEntry}
                     onSave={handleSaveEntry}
-                    isNew={!currentEntry}
                     isSaving={isSaving}
                   />
                 )}
