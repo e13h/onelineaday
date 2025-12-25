@@ -31,10 +31,8 @@ export default function EntryEditor({
   };
 
   const handleSave = async () => {
-    if (message.trim()) {
-      await onSave(date, message.trim());
-      setHasChanged(false);
-    }
+    await onSave(date, message.trim());
+    setHasChanged(false);
   };
 
   return (
