@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Check } from 'lucide-react';
 
 interface EntryEditorProps {
@@ -18,11 +18,35 @@ export default function EntryEditor({
 }: EntryEditorProps) {
   const [message, setMessage] = useState(initialMessage);
   const [hasChanged, setHasChanged] = useState(false);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     setMessage(initialMessage);
     setHasChanged(false);
   }, [date, initialMessage]);
+
+  // Auto-save effect for new entries
+  useEffect(() => {
+    if (isNew && message.trim() && message !== initialMessage && !isSaving) {
+      // Clear any existing timeout
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+
+      // Set a new timeout for auto-save
+      autoSaveTimeoutRef.current = setTimeout(async () => {
+        await onSave(date, message.trim());
+        setHasChanged(false);
+      }, 2000);
+    }
+
+    // Cleanup timeout on unmount or dependency change
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [isNew, message, initialMessage, isSaving, date, onSave]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newMessage = e.target.value;

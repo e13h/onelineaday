@@ -56,10 +56,16 @@ function App() {
     }
   }, [unsyncedChanges, isSyncing, entries, syncWithServer]);
 
+  // Auto-enable editing mode for new entries
+  useEffect(() => {
+    const currentEntry = entries[currentDate] || '';
+    if (!currentEntry && !editing) {
+      setEditing(true);
+    }
+  }, [currentDate, entries, editing]);
+
   const handleSaveEntry = useCallback(
     async (date: string, message: string) => {
-      const previousEditing = editing;
-
       setEntries((prev) => {
         const updated = { ...prev, [date]: message };
         setUnsyncedChanges(true);
@@ -69,12 +75,8 @@ function App() {
       setIsSaving(true);
       await saveEntry(date, message);
       setIsSaving(false);
-
-      if (previousEditing) {
-        setEditing(false);
-      }
     },
-    [saveEntry, editing]
+    [saveEntry]
   );
 
   const handleDeleteEntry = useCallback(
