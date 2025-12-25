@@ -3,15 +3,14 @@ import { ChevronLeft, ChevronRight, Home, Download, Upload, Edit2, Check } from 
 import { useDB } from './hooks/useDB';
 import { useSync } from './hooks/useSync';
 import { useGestures } from './hooks/useGestures';
-import { getCatchupCounts, formatDateDisplay, getStartDate } from './utils/dateUtils';
+import { getCatchupCounts, formatDateDisplay, getStartDate, formatDateString } from './utils/dateUtils';
 import CatchupBadge from './components/CatchupBadge';
 import OnThisDayList from './components/OnThisDayList';
 import EntryEditor from './components/EntryEditor';
 
 function App() {
   const [currentDate, setCurrentDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    return formatDateString();
   });
 
   const [entries, setEntries] = useState<Record<string, string>>({});
@@ -28,7 +27,7 @@ function App() {
       const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
       const newDate = new Date(currentYear, currentMonth - 1, currentDay);
       newDate.setDate(newDate.getDate() + offset);
-      setCurrentDate(newDate.toISOString().split('T')[0]);
+      setCurrentDate(formatDateString(newDate));
       setEditing(false);
     }
   );
@@ -132,13 +131,13 @@ function App() {
   }, [importData]);
 
   const goToToday = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
-    setCurrentDate(today);
+    const todayString = formatDateString();
+    setCurrentDate(todayString);
     setEditing(false);
   }, []);
 
   const currentEntry = entries[currentDate] || '';
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatDateString();
   const isToday = currentDate === today;
   const { previousCount, nextCount } = getCatchupCounts(
     currentDate,
@@ -195,7 +194,7 @@ function App() {
                 onClick={() => {
                   const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
                   const prev = new Date(currentYear, currentMonth - 1, currentDay - 1);
-                  setCurrentDate(prev.toISOString().split('T')[0]);
+                  setCurrentDate(formatDateString(prev));
                   setEditing(false);
                 }}
                 className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
@@ -220,7 +219,7 @@ function App() {
                 onClick={() => {
                   const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
                   const next = new Date(currentYear, currentMonth - 1, currentDay + 1);
-                  setCurrentDate(next.toISOString().split('T')[0]);
+                  setCurrentDate(formatDateString(next));
                   setEditing(false);
                 }}
                 className="p-2 rounded-lg hover:bg-slate-100 transition-colors"

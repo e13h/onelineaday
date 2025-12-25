@@ -1,3 +1,11 @@
+export function formatDateString(date: Date = new Date()): string {
+  return date.getFullYear() +
+    "-" +
+    String(date.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(date.getDate()).padStart(2, "0");
+}
+
 export function formatDateDisplay(dateString: string): string {
   const [year, month, day] = dateString.split("-").map(Number);
   const date = new Date(year, month - 1, day);
@@ -13,8 +21,7 @@ export function formatDateDisplay(dateString: string): string {
 export function getStartDate(entries: Record<string, string>): string {
   const dates = Object.keys(entries).sort();
   if (dates.length === 0) {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    return formatDateString();
   }
   return dates[0];
 }
@@ -42,7 +49,7 @@ export function getCatchupCounts(
   checkDate.setDate(checkDate.getDate() - 1);
 
   while (checkDate >= startDateObj) {
-    const dateString = checkDate.toISOString().split('T')[0];
+    const dateString = formatDateString(checkDate);
     if (!entries[dateString]) {
       previousCount++;
     }
@@ -53,7 +60,7 @@ export function getCatchupCounts(
   nextCheckDate.setDate(nextCheckDate.getDate() + 1);
 
   while (nextCheckDate <= today) {
-    const dateString = nextCheckDate.toISOString().split('T')[0];
+    const dateString = formatDateString(nextCheckDate);
     if (!entries[dateString]) {
       nextCount++;
     }
