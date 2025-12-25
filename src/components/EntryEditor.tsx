@@ -52,11 +52,25 @@ export default function EntryEditor({
     setHasChanged(newMessage !== initialMessage);
   };
 
+  const handleBlur = async () => {
+    // If there are unsaved changes and we're not currently saving, save immediately
+    if (message !== initialMessage && !isSaving) {
+      // Clear any pending auto-save timeout since we're saving now
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+        autoSaveTimeoutRef.current = undefined;
+      }
+      await onSave(date, message.trim());
+      setHasChanged(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
       <textarea
         value={message}
         onChange={handleChange}
+        onBlur={handleBlur}
         placeholder="What's on your mind today?"
         className="w-full p-6 text-slate-700 placeholder-slate-400 focus:outline-none resize-none"
         rows={6}
