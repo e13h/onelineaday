@@ -378,8 +378,8 @@ function App() {
                   <div
                     className="h-1 bg-blue-500 rounded-full transition-all"
                     style={{
-                      width: '2%',
-                      marginLeft: currentDate > today ? '0%' : currentDate === today ? '49%' : '98%',
+                      width: '10%',
+                      marginLeft: currentDate > today ? '0%' : currentDate === today ? '45%' : '90%',
                     }}
                   ></div>
                 </div>
