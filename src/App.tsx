@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Home, Download, Upload, Edit2, Check, Menu } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Home, Download, Upload, Edit2, Check, Menu, RefreshCw } from 'lucide-react';
 import { useDB, Entry } from './hooks/useDB';
 import { useSync } from './hooks/useSync';
 import { useGestures } from './hooks/useGestures';
@@ -287,6 +287,26 @@ function App() {
                       ></div>
                       {/* Dropdown menu */}
                       <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
+                        <button
+                          onClick={async () => {
+                            setShowDropdown(false);
+                            try {
+                              const success = await syncWithServer();
+                              if (success) {
+                                const updatedEntries = await loadEntries();
+                                setEntries(updatedEntries);
+                                setUnsyncedChanges(false);
+                              }
+                            } catch (error) {
+                              console.error('Manual sync failed:', error);
+                            }
+                          }}
+                          disabled={isSyncing}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-slate-50 text-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <RefreshCw size={18} className={`text-slate-600 ${isSyncing ? 'animate-spin' : ''}`} />
+                          {isSyncing ? 'Syncing...' : 'Sync Now'}
+                        </button>
                         <button
                           onClick={() => {
                             handleExport();
