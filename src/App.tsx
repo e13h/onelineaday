@@ -19,6 +19,7 @@ function App() {
   const [unsyncedChanges, setUnsyncedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const initialSyncDone = useRef(false);
 
   const { 
     loadEntries, 
@@ -32,7 +33,7 @@ function App() {
     getEntriesModifiedSince
   } = useDB();
   const { syncWithServer, isSyncing, lastSyncTime, initializeSync } = useSync(
-    entries,
+    () => entries,
     getLastSyncTime,
     setLastSyncTime,
     getEntriesModifiedSince,
@@ -71,6 +72,24 @@ function App() {
     initializeApp();
   }, [loadEntries, initializeSync]);
 
+  // Perform initial sync after app loads (only once)
+  useEffect(() => {
+    if (!initialSyncDone.current && startDate !== null) {
+      initialSyncDone.current = true;
+      setTimeout(async () => {
+        try {
+          const success = await syncWithServer();
+          if (success) {
+            const updatedEntries = await loadEntries();
+            setEntries(updatedEntries);
+          }
+        } catch (error) {
+          console.error('Initial sync failed:', error);
+        }
+      }, 1000); // Small delay to let the UI settle
+    }
+  }, [startDate, loadEntries]); // Remove syncWithServer from dependencies
+
   useEffect(() => {
     if (unsyncedChanges && !isSyncing) {
       const timer = setTimeout(async () => {
@@ -85,7 +104,35 @@ function App() {
 
       return () => clearTimeout(timer);
     }
-  }, [unsyncedChanges, isSyncing, syncWithServer, loadEntries]);
+  }, [unsyncedChanges, isSyncing, loadEntries]);
+
+  // Periodic sync every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (!isSyncing && !isSaving) {
+        try {
+          const success = await syncWithServer();
+          if (success) {
+            const updatedEntries = await loadEntries();
+            setEntries(prevEntries => {
+              // Only update if there are actual changes to avoid unnecessary re-renders
+              const hasChanges = Object.keys(updatedEntries).some(date => {
+                const prev = prevEntries[date];
+                const updated = updatedEntries[date];
+                return !prev || prev.message !== updated.message || prev.timestamp !== updated.timestamp;
+              }) || Object.keys(prevEntries).length !== Object.keys(updatedEntries).length;
+              
+              return hasChanges ? updatedEntries : prevEntries;
+            });
+          }
+        } catch (error) {
+          console.error('Periodic sync failed:', error);
+        }
+      }
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [isSyncing, isSaving, loadEntries]);
 
   // Auto-enable editing mode for new entries
   useEffect(() => {

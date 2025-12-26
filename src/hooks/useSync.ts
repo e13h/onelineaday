@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { Entry } from './useDB';
 
 export function useSync(
-  entries: Record<string, Entry>,
+  getEntries: () => Record<string, Entry>,
   getLastSyncTime: () => Promise<string | null>,
   setLastSyncTime: (timestamp: string) => Promise<void>,
   getEntriesModifiedSince: (since: string) => Promise<Entry[]>,
@@ -16,6 +16,9 @@ export function useSync(
 
     setIsSyncing(true);
     try {
+      // Get current entries at sync time
+      const entries = getEntries();
+      
       // Get our last sync timestamp
       const lastSync = await getLastSyncTime();
       
@@ -114,7 +117,7 @@ export function useSync(
     } finally {
       setIsSyncing(false);
     }
-  }, [isSyncing, entries, getLastSyncTime, setLastSyncTime, getEntriesModifiedSince, saveEntries]);
+  }, [isSyncing, getEntries, getLastSyncTime, setLastSyncTime, getEntriesModifiedSince, saveEntries]);
 
   // Initialize last sync time on first load
   const initializeSync = useCallback(async () => {
