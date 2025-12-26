@@ -1,36 +1,84 @@
 import { useState, useCallback } from 'react';
+import { Entry } from './useDB';
 
-export function useSync(entries: Record<string, string>) {
+export function useSync(
+  entries: Record<string, Entry>,
+  getLastSyncTime: () => Promise<string | null>,
+  setLastSyncTime: (timestamp: string) => Promise<void>,
+  getEntriesModifiedSince: (since: string) => Promise<Entry[]>,
+  saveEntries: (entries: Entry[]) => Promise<void>
+) {
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+  const [lastSyncTime, setLastSyncTimeState] = useState<string | null>(null);
 
-  const syncWithServer = useCallback(
-    async (entriesToSync: Record<string, string>) => {
-      if (isSyncing) return;
+  const syncWithServer = useCallback(async (): Promise<boolean> => {
+    if (isSyncing) return false;
 
-      setIsSyncing(true);
+    setIsSyncing(true);
+    try {
+      // Get our last sync timestamp
+      const lastSync = await getLastSyncTime();
+      
+      // Step 1: Get changes from server since our last sync
+      let serverEntries: Entry[] = [];
       try {
-        const entryArray = Object.entries(entriesToSync).map(([date, message]) => ({
-          date,
-          message,
-        }));
+        const response = await fetch('/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            lastSync: lastSync,
+            action: 'pull'
+          }),
+        });
 
-        // Send data in chunks to avoid payload size limits
+        if (response.ok) {
+          const data = await response.json();
+          serverEntries = data.entries || [];
+        } else {
+          console.error('Failed to pull changes from server:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error pulling changes from server:', error);
+      }
+
+      // Step 2: Merge server entries with local entries (most recent timestamp wins)
+      const mergedEntries = { ...entries };
+      let hasLocalChanges = false;
+
+      for (const serverEntry of serverEntries) {
+        const localEntry = mergedEntries[serverEntry.date];
+        
+        if (!localEntry || serverEntry.timestamp > localEntry.timestamp) {
+          mergedEntries[serverEntry.date] = serverEntry;
+          hasLocalChanges = true;
+        }
+      }
+
+      // Save merged entries to local database if there were server changes
+      if (hasLocalChanges) {
+        await saveEntries(Object.values(mergedEntries));
+      }
+
+      // Step 3: Get local changes since last sync and send to server
+      const localChanges = lastSync ? await getEntriesModifiedSince(lastSync) : Object.values(entries);
+      
+      if (localChanges.length > 0) {
+        // Send local changes in chunks
         const CHUNK_SIZE = 50;
         const chunks = [];
-        for (let i = 0; i < entryArray.length; i += CHUNK_SIZE) {
-          chunks.push(entryArray.slice(i, i + CHUNK_SIZE));
+        for (let i = 0; i < localChanges.length; i += CHUNK_SIZE) {
+          chunks.push(localChanges.slice(i, i + CHUNK_SIZE));
         }
 
-        let allSuccessful = true;
+        let pushSuccessful = true;
 
-        // Process chunks sequentially
         for (let i = 0; i < chunks.length; i++) {
           try {
-            const response = await fetch('/api/import', {
+            const response = await fetch('/api/sync', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
+              body: JSON.stringify({
+                action: 'push',
                 entries: chunks[i],
                 chunkIndex: i,
                 totalChunks: chunks.length
@@ -38,26 +86,46 @@ export function useSync(entries: Record<string, string>) {
             });
 
             if (!response.ok) {
-              console.error(`Sync failed for chunk ${i + 1}/${chunks.length}:`, response.statusText);
-              allSuccessful = false;
+              console.error(`Push failed for chunk ${i + 1}/${chunks.length}:`, response.statusText);
+              pushSuccessful = false;
             }
           } catch (error) {
-            console.error(`Error syncing chunk ${i + 1}/${chunks.length} with server:`, error);
-            allSuccessful = false;
+            console.error(`Error pushing chunk ${i + 1}/${chunks.length} to server:`, error);
+            pushSuccessful = false;
           }
         }
 
-        if (allSuccessful) {
-          setLastSyncTime(Date.now());
+        if (!pushSuccessful) {
+          return false;
         }
-      } catch (error) {
-        console.error('Error syncing with server:', error);
-      } finally {
-        setIsSyncing(false);
       }
-    },
-    [isSyncing]
-  );
 
-  return { syncWithServer, isSyncing, lastSyncTime };
+      // Step 4: Update last sync timestamp
+      const newSyncTime = new Date().toISOString();
+      await setLastSyncTime(newSyncTime);
+      setLastSyncTimeState(newSyncTime);
+
+      console.log(`Delta sync completed. Pulled ${serverEntries.length} entries, pushed ${localChanges.length} entries`);
+      return true;
+
+    } catch (error) {
+      console.error('Error during delta sync:', error);
+      return false;
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isSyncing, entries, getLastSyncTime, setLastSyncTime, getEntriesModifiedSince, saveEntries]);
+
+  // Initialize last sync time on first load
+  const initializeSync = useCallback(async () => {
+    const lastSync = await getLastSyncTime();
+    setLastSyncTimeState(lastSync);
+  }, [getLastSyncTime]);
+
+  return { 
+    syncWithServer, 
+    isSyncing, 
+    lastSyncTime,
+    initializeSync
+  };
 }

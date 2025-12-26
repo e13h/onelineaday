@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Home, Download, Upload, Edit2, Check } from 'lucide-react';
-import { useDB } from './hooks/useDB';
+import { useDB, Entry } from './hooks/useDB';
 import { useSync } from './hooks/useSync';
 import { useGestures } from './hooks/useGestures';
 import { getCatchupCounts, formatDateDisplay, getStartDate, formatDateString } from './utils/dateUtils';
@@ -13,15 +13,31 @@ function App() {
     return formatDateString();
   });
 
-  const [entries, setEntries] = useState<Record<string, string>>({});
+  const [entries, setEntries] = useState<Record<string, Entry>>({});
   const [startDate, setStartDate] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [unsyncedChanges, setUnsyncedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { loadEntries, saveEntry, deleteEntry, exportData, importData } = useDB();
-  const { syncWithServer, isSyncing, lastSyncTime } = useSync(entries);
+  const { 
+    loadEntries, 
+    saveEntry, 
+    saveEntries,
+    deleteEntry, 
+    exportData, 
+    importData,
+    getLastSyncTime,
+    setLastSyncTime,
+    getEntriesModifiedSince
+  } = useDB();
+  const { syncWithServer, isSyncing, lastSyncTime, initializeSync } = useSync(
+    entries,
+    getLastSyncTime,
+    setLastSyncTime,
+    getEntriesModifiedSince,
+    saveEntries
+  );
   const { handleWheel, handleTouchStart, handleTouchEnd } = useGestures(
     (offset) => {
       const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
@@ -37,63 +53,88 @@ function App() {
       const loadedEntries = await loadEntries();
       setEntries(loadedEntries);
 
-      const calculatedStartDate = getStartDate(loadedEntries);
+      // Convert entries to string format for getStartDate compatibility
+      const stringEntries: Record<string, string> = {};
+      Object.entries(loadedEntries).forEach(([date, entry]) => {
+        if (entry.message) { // Only include non-empty messages (exclude tombstones)
+          stringEntries[date] = entry.message;
+        }
+      });
+
+      const calculatedStartDate = getStartDate(stringEntries);
       setStartDate(calculatedStartDate);
+      
+      // Initialize sync state
+      await initializeSync();
     };
 
     initializeApp();
-  }, [loadEntries]);
+  }, [loadEntries, initializeSync]);
 
   useEffect(() => {
     if (unsyncedChanges && !isSyncing) {
       const timer = setTimeout(async () => {
-        await syncWithServer(entries);
-        setUnsyncedChanges(false);
+        const success = await syncWithServer();
+        if (success) {
+          setUnsyncedChanges(false);
+          // Reload entries to get any server changes
+          const updatedEntries = await loadEntries();
+          setEntries(updatedEntries);
+        }
       }, 1000);
 
       return () => clearTimeout(timer);
     }
-  }, [unsyncedChanges, isSyncing, entries, syncWithServer]);
+  }, [unsyncedChanges, isSyncing, syncWithServer, loadEntries]);
 
   // Auto-enable editing mode for new entries
   useEffect(() => {
-    const currentEntry = entries[currentDate] || '';
-    if (!currentEntry && !editing) {
+    const currentEntry = entries[currentDate];
+    const currentMessage = currentEntry?.message || '';
+    if (!currentMessage && !editing) {
       setEditing(true);
     }
   }, [currentDate, entries, editing]);
 
   const handleSaveEntry = useCallback(
     async (date: string, message: string) => {
-      setEntries((prev) => {
-        const updated = { ...prev, [date]: message };
-        setUnsyncedChanges(true);
-        return updated;
-      });
-
       setIsSaving(true);
-      await saveEntry(date, message);
-      setIsSaving(false);
+      try {
+        const savedEntry = await saveEntry(date, message);
+        setEntries((prev) => {
+          const updated = { ...prev, [date]: savedEntry };
+          setUnsyncedChanges(true);
+          return updated;
+        });
+      } catch (error) {
+        console.error('Error saving entry:', error);
+      } finally {
+        setIsSaving(false);
+      }
     },
     [saveEntry]
   );
 
   const handleDeleteEntry = useCallback(
     async (date: string) => {
-      setEntries((prev) => {
-        const updated = { ...prev };
-        delete updated[date];
-        setUnsyncedChanges(true);
-        return updated;
-      });
-
-      await deleteEntry(date);
+      try {
+        const tombstone = await deleteEntry(date);
+        setEntries((prev) => {
+          const updated = { ...prev, [date]: tombstone };
+          setUnsyncedChanges(true);
+          return updated;
+        });
+      } catch (error) {
+        console.error('Error deleting entry:', error);
+      }
     },
     [deleteEntry]
   );
 
   const handleExport = useCallback(async () => {
-    const data = Object.entries(entries).map(([date, message]) => ({ date, message }));
+    const data = Object.values(entries)
+      .filter(entry => entry.message) // Exclude tombstones
+      .map(entry => ({ date: entry.date, message: entry.message, timestamp: entry.timestamp }));
     const jsonString = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -136,12 +177,22 @@ function App() {
     setEditing(false);
   }, []);
 
-  const currentEntry = entries[currentDate] || '';
+  const currentEntry = entries[currentDate];
+  const currentMessage = currentEntry?.message || '';
   const today = formatDateString();
   const isToday = currentDate === today;
+  
+  // Convert entries to string format for getCatchupCounts compatibility
+  const stringEntries: Record<string, string> = {};
+  Object.entries(entries).forEach(([date, entry]) => {
+    if (entry.message) { // Only include non-empty messages (exclude tombstones)
+      stringEntries[date] = entry.message;
+    }
+  });
+  
   const { previousCount, nextCount } = getCatchupCounts(
     currentDate,
-    entries,
+    stringEntries,
     startDate || today
   );
 
@@ -240,10 +291,10 @@ function App() {
           <div className="flex-1 overflow-y-auto flex flex-col">
             <div className="max-w-2xl mx-auto w-full px-4 py-8 sm:px-6">
               <div className="mb-8">
-                {currentEntry && !editing && (
+                {currentMessage && !editing && (
                   <div className="bg-white rounded-lg p-6 border border-slate-200 shadow-sm">
                     <div className="flex items-start justify-between mb-3">
-                      <p className="text-slate-700 leading-relaxed">{currentEntry}</p>
+                      <p className="text-slate-700 leading-relaxed">{currentMessage}</p>
                       <button
                         onClick={() => setEditing(true)}
                         className="p-1 ml-2 hover:bg-slate-100 rounded transition-colors flex-shrink-0"
@@ -267,10 +318,10 @@ function App() {
                   </div>
                 )}
 
-                {(!currentEntry || editing) && (
+                {(!currentMessage || editing) && (
                   <EntryEditor
                     date={currentDate}
-                    initialMessage={currentEntry}
+                    initialMessage={currentMessage}
                     onSave={handleSaveEntry}
                     isSaving={isSaving}
                   />
@@ -280,7 +331,7 @@ function App() {
               {/* On This Day section */}
               <div className="mb-8">
                 <h2 className="text-lg font-semibold text-slate-900 mb-4">On this day</h2>
-                <OnThisDayList currentDate={currentDate} entries={entries} />
+                <OnThisDayList currentDate={currentDate} entries={stringEntries} />
               </div>
             </div>
           </div>

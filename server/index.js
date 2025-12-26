@@ -33,6 +33,11 @@ function initializeDatabase() {
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Add index on updated_at for efficient delta sync queries
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_entries_updated_at ON entries(updated_at)
+  `);
 }
 
 app.get('/api/entries', (req, res) => {
@@ -157,6 +162,80 @@ app.post('/api/import', (req, res) => {
   } catch (error) {
     console.error('Error importing entries:', error);
     res.status(500).json({ error: 'Failed to import entries' });
+  }
+});
+
+// Delta sync endpoint
+app.post('/api/sync', (req, res) => {
+  try {
+    const { action, lastSync, entries } = req.body;
+
+    if (action === 'pull') {
+      // Return entries modified since lastSync timestamp
+      let query = 'SELECT date, message, updated_at as timestamp FROM entries';
+      let params = [];
+
+      if (lastSync) {
+        query += ' WHERE updated_at > ? ORDER BY updated_at';
+        params.push(lastSync);
+      } else {
+        query += ' ORDER BY updated_at';
+      }
+
+      const serverEntries = db.prepare(query).all(...params);
+      res.json({ entries: serverEntries });
+
+    } else if (action === 'push') {
+      // Receive and merge client entries
+      if (!Array.isArray(entries)) {
+        return res.status(400).json({ error: 'Entries must be an array for push action' });
+      }
+
+      const stmt = db.prepare(`
+        INSERT OR REPLACE INTO entries (date, message, updated_at) 
+        SELECT ?, ?, ? 
+        WHERE NOT EXISTS (
+          SELECT 1 FROM entries 
+          WHERE date = ? AND updated_at >= ?
+        ) OR EXISTS (
+          SELECT 1 FROM entries 
+          WHERE date = ? AND updated_at < ?
+        )
+      `);
+
+      let updatedCount = 0;
+      for (const entry of entries) {
+        if (!entry.date || typeof entry.message !== 'string' || !entry.timestamp) {
+          continue; // Skip invalid entries
+        }
+
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(entry.date)) {
+          continue; // Skip invalid date format
+        }
+
+        // Check if we should update (client timestamp is newer or entry doesn't exist)
+        const existing = db.prepare('SELECT updated_at FROM entries WHERE date = ?').get(entry.date);
+        
+        if (!existing || entry.timestamp > existing.updated_at) {
+          const result = db.prepare('INSERT OR REPLACE INTO entries (date, message, updated_at) VALUES (?, ?, ?)').run(
+            entry.date, 
+            entry.message, 
+            entry.timestamp
+          );
+          if (result.changes > 0) {
+            updatedCount++;
+          }
+        }
+      }
+
+      res.json({ success: true, updatedCount });
+    } else {
+      res.status(400).json({ error: 'Action must be either "pull" or "push"' });
+    }
+  } catch (error) {
+    console.error('Error in sync endpoint:', error);
+    res.status(500).json({ error: 'Sync failed' });
   }
 });
 
