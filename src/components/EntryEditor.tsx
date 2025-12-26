@@ -74,7 +74,6 @@ export default function EntryEditor({
         placeholder="What's on your mind today?"
         className="w-full p-6 text-slate-700 placeholder-slate-400 focus:outline-none resize-none"
         rows={6}
-        autoFocus
       />
 
       <div className="px-6 pb-4 flex items-center justify-between border-t border-slate-200">
