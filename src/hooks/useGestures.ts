@@ -1,7 +1,6 @@
 import { useRef, useCallback } from 'react';
 
 const MIN_SWIPE_DISTANCE = 50;
-const SCROLL_SENSITIVITY = 30;
 
 export function useGestures(onDateChange: (offset: number) => void) {
   const touchStartXRef = useRef(0);
@@ -31,31 +30,13 @@ export function useGestures(onDateChange: (offset: number) => void) {
       }
 
       if (Math.abs(distanceX) >= MIN_SWIPE_DISTANCE) {
-        const direction = distanceX > 0 ? -1 : 1;
+        // Swipe left goes to next day, swipe right goes to previous day
+        const direction = distanceX > 0 ? 1 : -1;
         onDateChange(direction);
       }
     },
     [onDateChange]
   );
 
-  const handleWheel = useCallback(
-    (e: React.WheelEvent<HTMLDivElement>) => {
-      const deltaX = e.deltaX;
-      const deltaY = e.deltaY;
-
-      if (Math.abs(deltaY) > Math.abs(deltaX)) {
-        return;
-      }
-
-      e.preventDefault();
-
-      if (Math.abs(deltaX) >= SCROLL_SENSITIVITY) {
-        const direction = deltaX > 0 ? -1 : 1;
-        onDateChange(direction);
-      }
-    },
-    [onDateChange]
-  );
-
-  return { handleWheel, handleTouchStart, handleTouchEnd };
+  return { handleTouchStart, handleTouchEnd };
 }

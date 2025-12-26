@@ -41,7 +41,7 @@ function App() {
     getEntriesModifiedSince,
     saveEntries
   );
-  const { handleWheel, handleTouchStart, handleTouchEnd } = useGestures(
+  const { handleTouchStart, handleTouchEnd } = useGestures(
     (offset) => {
       const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
       const newDate = new Date(currentYear, currentMonth - 1, currentDay);
@@ -276,7 +276,6 @@ function App() {
     <div
       ref={containerRef}
       className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden"
-      onWheel={handleWheel}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
