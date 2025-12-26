@@ -4,10 +4,7 @@ A "one line a day" journaling app that helps me jot down a few sentences about e
 
 ## TODO
 
-- [ ] Make current entry autosave when navigating away from text box (click out, navigation, any button click, close page, etc.)
-- [ ] Debug sync error when editing an entry
-- [ ] Figure out why opening in a new client doesn't auto sync from server
-- [ ] Move import/export buttons to a hamburger menu
+- [ ] If the user clears out the entry, delete the entry instead of storing an empty string
 
 ## Requirements
 
