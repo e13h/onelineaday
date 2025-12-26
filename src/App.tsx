@@ -135,14 +135,16 @@ function App() {
     return () => clearInterval(interval);
   }, [isSyncing, isSaving, loadEntries]);
 
-  // Auto-enable editing mode for new entries
+  // Auto-enable editing mode for new entries, disable for existing entries
   useEffect(() => {
     const currentEntry = entries[currentDate];
     const currentMessage = currentEntry?.message || '';
-    if (!currentMessage && !editing) {
+    if (!currentMessage) {
       setEditing(true);
+    } else {
+      setEditing(false);
     }
-  }, [currentDate, entries, editing]);
+  }, [currentDate, entries]);
 
   const handleSaveEntry = useCallback(
     async (date: string, message: string) => {
