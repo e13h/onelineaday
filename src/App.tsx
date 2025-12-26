@@ -357,18 +357,21 @@ function App() {
 
             {/* Navigation arrows */}
             <div className="flex items-center justify-between">
-              <button
-                onClick={() => {
-                  const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
-                  const prev = new Date(currentYear, currentMonth - 1, currentDay - 1);
-                  setCurrentDate(formatDateString(prev));
-                  setEditing(false);
-                }}
-                className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-                title="Previous day"
-              >
-                <ChevronLeft size={24} className="text-slate-600" />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
+                    const prev = new Date(currentYear, currentMonth - 1, currentDay - 1);
+                    setCurrentDate(formatDateString(prev));
+                    setEditing(false);
+                  }}
+                  className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
+                  title="Previous day"
+                >
+                  <ChevronLeft size={24} className="text-slate-600" />
+                </button>
+                <CatchupBadge count={previousCount} side="left" />
+              </div>
 
               <div className="flex-1 px-4">
                 <div className="h-1 bg-slate-200 rounded-full relative">
@@ -382,30 +385,28 @@ function App() {
                 </div>
               </div>
 
-              <button
-                onClick={() => {
-                  const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
-                  const next = new Date(currentYear, currentMonth - 1, currentDay + 1);
-                  setCurrentDate(formatDateString(next));
-                  setEditing(false);
-                }}
-                className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-                title="Next day"
-              >
-                <ChevronRight size={24} className="text-slate-600" />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
+                    const next = new Date(currentYear, currentMonth - 1, currentDay + 1);
+                    setCurrentDate(formatDateString(next));
+                    setEditing(false);
+                  }}
+                  className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
+                  title="Next day"
+                >
+                  <ChevronRight size={24} className="text-slate-600" />
+                </button>
+                <CatchupBadge count={nextCount} side="right" />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-row overflow-hidden">
-          {/* Left sidebar - Previous catchup count */}
-          <CatchupBadge count={previousCount} side="left" />
-
-          {/* Center - Entry editor and on this day list */}
-          <div className="flex-1 overflow-y-auto flex flex-col">
-            <div className="max-w-2xl mx-auto w-full px-4 py-8 sm:px-6">
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-2xl mx-auto w-full px-4 py-8 sm:px-6">
               <div className="mb-8">
                 {currentMessage && !editing && (
                   <div className="bg-white rounded-lg p-6 border border-slate-200 shadow-sm">
@@ -449,11 +450,7 @@ function App() {
                 <h2 className="text-lg font-semibold text-slate-900 mb-4">On this day</h2>
                 <OnThisDayList currentDate={currentDate} entries={stringEntries} />
               </div>
-            </div>
           </div>
-
-          {/* Right sidebar - Next catchup count */}
-          <CatchupBadge count={nextCount} side="right" />
         </div>
 
         {/* Sync status indicator */}

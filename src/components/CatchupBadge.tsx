@@ -6,21 +6,15 @@ interface CatchupBadgeProps {
 export default function CatchupBadge({ count, side }: CatchupBadgeProps) {
   if (count === 0) return null;
 
-  const sideClass = side === 'left' ? 'flex-col items-end' : 'flex-col items-start';
-  const positionClass = side === 'left' ? 'lg:left-4' : 'lg:right-4';
-  const bgColor = count > 10 ? 'bg-red-50' : 'bg-amber-50';
-  const textColor = count > 10 ? 'text-red-700' : 'text-amber-700';
-  const borderColor = count > 10 ? 'border-red-200' : 'border-amber-200';
+  const positionClass = side === 'left' ? '-top-2 -left-2' : '-top-2 -right-2';
+  const bgColor = count > 10 ? 'bg-red-500' : 'bg-amber-500';
 
   return (
-    <div className={`flex ${sideClass} justify-center w-16 px-2 py-8 lg:block lg:absolute ${positionClass} lg:top-1/2 lg:transform lg:-translate-y-1/2 lg:z-10 lg:w-auto lg:px-0 lg:py-0`}>
+    <div className={`absolute ${positionClass} pointer-events-none`}>
       <div
-        className={`${bgColor} ${textColor} ${borderColor} border rounded-lg px-2 py-3 text-center min-w-10`}
+        className={`${bgColor} text-white text-xs font-semibold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5`}
       >
-        <div className="text-xs font-semibold leading-tight">{count}</div>
-        <div className="text-xs opacity-75 mt-1">
-          {count > 1 ? 'entries missing' : 'entry missing'}
-        </div>
+        {count > 99 ? '99+' : count}
       </div>
     </div>
   );
