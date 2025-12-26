@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Home, Download, Upload, Edit2, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Home, Download, Upload, Edit2, Check, Menu } from 'lucide-react';
 import { useDB, Entry } from './hooks/useDB';
 import { useSync } from './hooks/useSync';
 import { useGestures } from './hooks/useGestures';
@@ -18,6 +18,7 @@ function App() {
   const [editing, setEditing] = useState(false);
   const [unsyncedChanges, setUnsyncedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const initialSyncDone = useRef(false);
 
@@ -259,7 +260,7 @@ function App() {
               <h1 className="text-2xl sm:text-3xl font-light text-slate-900">
                 {formatDateDisplay(currentDate)}
               </h1>
-              <div className="flex gap-2">
+              <div className="flex gap-2 relative">
                 {!isToday && (
                   <button
                     onClick={goToToday}
@@ -269,20 +270,47 @@ function App() {
                     <span className="hidden sm:inline">Today</span>
                   </button>
                 )}
-                <button
-                  onClick={handleExport}
-                  className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-                  title="Export entries"
-                >
-                  <Download size={20} className="text-slate-600" />
-                </button>
-                <button
-                  onClick={handleImport}
-                  className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-                  title="Import entries"
-                >
-                  <Upload size={20} className="text-slate-600" />
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                    title="Menu"
+                  >
+                    <Menu size={20} className="text-slate-600" />
+                  </button>
+                  {showDropdown && (
+                    <>
+                      {/* Backdrop to close dropdown when clicking outside */}
+                      <div 
+                        className="fixed inset-0 z-10" 
+                        onClick={() => setShowDropdown(false)}
+                      ></div>
+                      {/* Dropdown menu */}
+                      <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
+                        <button
+                          onClick={() => {
+                            handleExport();
+                            setShowDropdown(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-slate-50 text-slate-700 transition-colors"
+                        >
+                          <Download size={18} className="text-slate-600" />
+                          Export entries
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleImport();
+                            setShowDropdown(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-slate-50 text-slate-700 transition-colors"
+                        >
+                          <Upload size={18} className="text-slate-600" />
+                          Import entries
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
