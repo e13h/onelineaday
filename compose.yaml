@@ -1,0 +1,22 @@
+services:
+  one-line-a-day:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persist the SQLite database
+      - ./db:/app/db
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  db_data:
+    driver: local
