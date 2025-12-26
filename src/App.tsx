@@ -20,6 +20,7 @@ function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const initialSyncDone = useRef(false);
 
   const { 
@@ -106,6 +107,31 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [unsyncedChanges, isSyncing, loadEntries]);
+
+  // Handle click outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showDropdown]);
 
   // Periodic sync every 10 seconds
   useEffect(() => {
@@ -254,6 +280,8 @@ function App() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Backdrop for dropdown - outside header so it covers entire page */}
+      
       <div className="relative h-screen flex flex-col overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-slate-200 z-10">
@@ -272,7 +300,7 @@ function App() {
                     <span className="hidden sm:inline">Today</span>
                   </button>
                 )}
-                <div className="relative">
+                <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
                     className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
@@ -281,14 +309,7 @@ function App() {
                     <Menu size={20} className="text-slate-600" />
                   </button>
                   {showDropdown && (
-                    <>
-                      {/* Backdrop to close dropdown when clicking outside */}
-                      <div 
-                        className="fixed inset-0 z-10" 
-                        onClick={() => setShowDropdown(false)}
-                      ></div>
-                      {/* Dropdown menu */}
-                      <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-[110]">
                         <button
                           onClick={async () => {
                             setShowDropdown(false);
@@ -330,7 +351,6 @@ function App() {
                           Import entries
                         </button>
                       </div>
-                    </>
                   )}
                 </div>
               </div>
