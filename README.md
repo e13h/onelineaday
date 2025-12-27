@@ -2,11 +2,19 @@
 
 A "one line a day" journaling app that helps me jot down a few sentences about each day and reminisce about "on this day" entries of today in previous years.
 
+## Installation
+
+```
+npm install
+npm run build
+npm run dev
+```
+
 ## TODO
 
 - [ ] If the user clears out the entry, delete the entry instead of storing an empty string
 
-## Requirements
+## Project Requirements
 
 1. Simple, clutter free "today" view landing page with a prompt containing today's date and textbox for entering the journal entry.
 2. A swipe/scroll down gesture reveals a simple list of "on this day" entries of this month and day recorded in previous years
