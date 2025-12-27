@@ -16,7 +16,6 @@ jobs:
   build:
     strategy:
       matrix:
-        target: [frontend, backend]
         platform: [linux/amd64, linux/arm64]
         include:
           - os: ubuntu-latest
@@ -52,10 +51,9 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          target: ${{ matrix.target }}
           platforms: ${{ matrix.platform }}
           push: ${{ github.event_name != 'pull_request' }}
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.REPOSITORY }}-${{ matrix.target }},push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.REPOSITORY }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
         if: github.event_name != 'pull_request'
@@ -68,7 +66,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ matrix.target }}-${{ env.PLATFORM_PAIR }}
+          name: digests-${{ env.PLATFORM_PAIR }}
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -77,9 +75,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
-    strategy:
-      matrix:
-        target: [frontend, backend]
     permissions:
       contents: read
       packages: write
@@ -89,7 +84,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ${{ runner.temp }}/digests
-          pattern: digests-${{ matrix.target }}-*
+          pattern: digests-*
           merge-multiple: true
 
       - name: Set up Docker Buildx
@@ -107,7 +102,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}-${{ matrix.target }}
+            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -121,8 +116,8 @@ jobs:
         working-directory: ${{ runner.temp }}/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY }}/${{ env.REPOSITORY }}-${{ matrix.target }}@sha256:%s ' *)
+            $(printf '${{ env.REGISTRY }}/${{ env.REPOSITORY }}@sha256:%s ' *)
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.REPOSITORY }}-${{ matrix.target }}:${{ steps.meta.outputs.version }}
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ steps.meta.outputs.version }}
