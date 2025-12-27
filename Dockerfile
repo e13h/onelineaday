@@ -30,13 +30,5 @@ RUN mkdir -p /app/db
 # Expose the port the app runs on
 EXPOSE 3000
 
-# Create a non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
-
-# Change ownership of the app directory
-RUN chown -R nextjs:nodejs /app
-USER nextjs
-
 # Start the application
 CMD ["node", "server/index.js"]
