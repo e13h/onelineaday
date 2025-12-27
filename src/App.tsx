@@ -244,7 +244,7 @@ function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `journal-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `onelineaday_export_${new Date().toISOString().replace(/:/g, '-')}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }, [entries]);
