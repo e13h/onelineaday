@@ -22,6 +22,8 @@ function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const initialSyncDone = useRef(false);
+  const syncDelayRef = useRef(10000); // Start with 10 seconds
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { 
     loadEntries, 
@@ -133,32 +135,58 @@ function App() {
     };
   }, [showDropdown]);
 
-  // Periodic sync every 10 seconds
+  // Periodic sync with exponential backoff
   useEffect(() => {
-    const interval = setInterval(async () => {
-      if (!isSyncing && !isSaving) {
-        try {
-          const success = await syncWithServer();
-          if (success) {
-            const updatedEntries = await loadEntries();
-            setEntries(prevEntries => {
-              // Only update if there are actual changes to avoid unnecessary re-renders
-              const hasChanges = Object.keys(updatedEntries).some(date => {
-                const prev = prevEntries[date];
-                const updated = updatedEntries[date];
-                return !prev || prev.message !== updated.message || prev.timestamp !== updated.timestamp;
-              }) || Object.keys(prevEntries).length !== Object.keys(updatedEntries).length;
-              
-              return hasChanges ? updatedEntries : prevEntries;
-            });
-          }
-        } catch (error) {
-          console.error('Periodic sync failed:', error);
-        }
+    const scheduleNextSync = () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
       }
-    }, 10000); // 10 seconds
+      
+      syncTimeoutRef.current = setTimeout(async () => {
+        if (!isSyncing && !isSaving) {
+          try {
+            const success = await syncWithServer();
+            if (success) {
+              // Reset delay on successful sync
+              syncDelayRef.current = 10000; // 10 seconds
+              
+              const updatedEntries = await loadEntries();
+              setEntries(prevEntries => {
+                // Only update if there are actual changes to avoid unnecessary re-renders
+                const hasChanges = Object.keys(updatedEntries).some(date => {
+                  const prev = prevEntries[date];
+                  const updated = updatedEntries[date];
+                  return !prev || prev.message !== updated.message || prev.timestamp !== updated.timestamp;
+                }) || Object.keys(prevEntries).length !== Object.keys(updatedEntries).length;
+                
+                return hasChanges ? updatedEntries : prevEntries;
+              });
+            } else {
+              // Increase delay on sync failure with exponential backoff (max 5 minutes)
+              syncDelayRef.current = Math.min(syncDelayRef.current * 2, 300000);
+              console.log(`Sync failed, increasing delay to ${syncDelayRef.current / 1000} seconds`);
+            }
+          } catch (error) {
+            console.error('Periodic sync failed:', error);
+            // Increase delay on error with exponential backoff (max 5 minutes)
+            syncDelayRef.current = Math.min(syncDelayRef.current * 2, 300000);
+            console.log(`Sync error, increasing delay to ${syncDelayRef.current / 1000} seconds`);
+          }
+        }
+        
+        // Schedule the next sync
+        scheduleNextSync();
+      }, syncDelayRef.current);
+    };
 
-    return () => clearInterval(interval);
+    // Start the first sync
+    scheduleNextSync();
+
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
   }, [isSyncing, isSaving, loadEntries]);
 
   // Auto-enable editing mode for new entries, disable for existing entries
