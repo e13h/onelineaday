@@ -8,8 +8,21 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = dirname(__dirname);
 const dbDir = join(projectRoot, 'db');
 
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+// Ensure database directory exists with proper error handling
+function ensureDbDirectory() {
+  try {
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+      console.log(`Created database directory: ${dbDir}`);
+    }
+    
+    // Verify directory is accessible
+    fs.accessSync(dbDir, fs.constants.W_OK);
+    console.log(`Database directory verified: ${dbDir}`);
+  } catch (error) {
+    console.error(`Failed to create or access database directory: ${dbDir}`, error);
+    throw error;
+  }
 }
 
 const app = express();
@@ -20,7 +33,40 @@ let db;
 
 function initializeDatabase() {
   const dbPath = join(dbDir, 'journal.db');
-  db = new Database(dbPath);
+  const maxRetries = 3;
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Attempting to open database (attempt ${attempt}/${maxRetries}): ${dbPath}`);
+      
+      // Ensure directory exists before each attempt
+      ensureDbDirectory();
+      
+      // Small delay on retry attempts to handle filesystem latency
+      if (attempt > 1) {
+        const delay = Math.pow(2, attempt - 1) * 100; // Exponential backoff: 200ms, 400ms
+        console.log(`Waiting ${delay}ms before retry...`);
+        // Use a synchronous delay since this is during startup
+        const start = Date.now();
+        while (Date.now() - start < delay) {
+          // Busy wait - not ideal but simple for startup scenario
+        }
+      }
+      
+      db = new Database(dbPath);
+      console.log(`Successfully opened database: ${dbPath}`);
+      break;
+    } catch (error) {
+      lastError = error;
+      console.error(`Database connection attempt ${attempt} failed:`, error.message);
+      
+      if (attempt === maxRetries) {
+        console.error(`All ${maxRetries} database connection attempts failed`);
+        throw lastError;
+      }
+    }
+  }
 
   db.pragma('foreign_keys = ON');
 
