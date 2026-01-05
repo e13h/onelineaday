@@ -76,28 +76,34 @@ export default function EntryEditor({
         rows={6}
       />
 
-      <div className="px-6 pb-4 flex items-center border-t border-slate-200">
-        {message === initialMessage && message.trim() === '' && (
-          <p className="text-xs text-slate-500">Start typing to save automatically</p>
-        )}
-        {hasChanged && !isSaving && (
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <Check size={14} />
-            Changes made
-          </div>
-        )}
-        {isSaving && (
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <div className="w-2 h-2 rounded-full bg-blue-500 animate-spin" />
-            Saving...
-          </div>
-        )}
-        {!hasChanged && !isSaving && message.trim() !== '' && (
-          <div className="flex items-center gap-2 text-xs text-green-600">
-            <Check size={14} />
-            Saved
-          </div>
-        )}
+      <div className="px-6 pb-4 flex items-center justify-between border-t border-slate-200">
+        <div>
+          {message === initialMessage && message.trim() === '' && (
+            <p className="text-xs text-slate-500">Start typing to save automatically</p>
+          )}
+          {hasChanged && !isSaving && (
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <Check size={14} />
+              Changes made
+            </div>
+          )}
+          {isSaving && (
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-spin" />
+              Saving...
+            </div>
+          )}
+          {!hasChanged && !isSaving && message.trim() !== '' && (
+            <div className="flex items-center gap-2 text-xs text-green-600">
+              <Check size={14} />
+              Saved
+            </div>
+          )}
+        </div>
+        
+        <div className={`text-xs ${message.length > 200 ? 'text-amber-500' : 'text-slate-400'}`}>
+          {message.length} {message.length === 1 ? 'character' : 'characters'}
+        </div>
       </div>
     </div>
   );
