@@ -30,3 +30,30 @@ body {
   -webkit-user-select: none;
   user-select: none;
 }
+
+/* Prevent hover effects on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .nav-button:hover {
+    background-color: rgb(241 245 249) !important; /* Keep default bg-slate-100 */
+  }
+  
+  .today-button:hover {
+    background-color: rgb(239 246 255) !important; /* Keep default bg-blue-50 */
+  }
+}
+
+/* Prevent focus/active states during touch */
+.nav-button:focus,
+.nav-button:active,
+.today-button:focus,
+.today-button:active {
+  outline: none;
+}
+
+.nav-button,
+.today-button {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
