@@ -440,12 +440,12 @@ function App() {
           <div className="max-w-2xl mx-auto w-full px-4 py-8 sm:px-6">
               <div className="mb-8">
                 {currentMessage && !editing && (
-                  <div className="bg-white rounded-lg p-6 border border-slate-200 shadow-sm">
+                  <div className="bg-slate-50 rounded-lg p-6 border border-slate-200">
                     <div className="flex items-start justify-between mb-3">
                       <p className="text-slate-700 leading-relaxed">{currentMessage}</p>
                       <button
                         onClick={() => setEditing(true)}
-                        className="flex items-center gap-2 px-3 py-2 ml-2 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors flex-shrink-0 text-sm text-slate-600 hover:text-slate-700"
+                        className="flex items-center gap-2 px-3 py-2 ml-2 bg-white hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors flex-shrink-0 text-sm text-slate-600 hover:text-slate-700"
                         title="Edit entry"
                       >
                         <Edit2 size={16} className="text-slate-500" />
