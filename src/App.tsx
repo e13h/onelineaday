@@ -19,6 +19,7 @@ function App() {
   const [unsyncedChanges, setUnsyncedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const initialSyncDone = useRef(false);
@@ -71,6 +72,7 @@ function App() {
       
       // Initialize sync state
       await initializeSync();
+      setIsInitializing(false);
     };
 
     initializeApp();
@@ -189,14 +191,17 @@ function App() {
     };
   }, [isSyncing, isSaving, loadEntries]);
 
-  // Auto-enable editing mode for new entries
+  // Auto-enable editing mode for new entries, but only after initial data is loaded
   useEffect(() => {
+    // Don't make editing decisions until initial data is loaded
+    if (isInitializing) return;
+    
     const currentEntry = entries[currentDate];
     const currentMessage = currentEntry?.message || '';
     if (!currentMessage) {
       setEditing(true);
     }
-  }, [currentDate, entries]);
+  }, [currentDate, entries, isInitializing]);
 
   const handleSaveEntry = useCallback(
     async (date: string, message: string) => {
