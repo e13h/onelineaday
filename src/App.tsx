@@ -189,14 +189,12 @@ function App() {
     };
   }, [isSyncing, isSaving, loadEntries]);
 
-  // Auto-enable editing mode for new entries, disable for existing entries
+  // Auto-enable editing mode for new entries
   useEffect(() => {
     const currentEntry = entries[currentDate];
     const currentMessage = currentEntry?.message || '';
     if (!currentMessage) {
       setEditing(true);
-    } else {
-      setEditing(false);
     }
   }, [currentDate, entries]);
 
