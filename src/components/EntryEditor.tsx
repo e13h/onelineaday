@@ -72,8 +72,9 @@ export default function EntryEditor({
         onChange={handleChange}
         onBlur={handleBlur}
         placeholder="What's on your mind today?"
-        className="w-full p-6 text-slate-700 placeholder-slate-400 focus:outline-none resize-none"
+        className="w-full p-6 text-slate-700 placeholder-slate-400 focus:outline-none resize-none overflow-hidden"
         rows={6}
+        style={{ minHeight: '144px', maxHeight: '300px' }}
       />
 
       <div className="px-6 pb-4 flex items-center justify-between border-t border-slate-200">

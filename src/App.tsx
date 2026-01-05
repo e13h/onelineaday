@@ -306,15 +306,16 @@ function App() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
+      className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden flex flex-col"
     >
-      {/* Backdrop for dropdown - outside header so it covers entire page */}
-      
-      <div className="relative h-screen flex flex-col overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-slate-200 z-10">
+      {/* Header - Fixed at top */}
+      <div 
+        className="flex-shrink-0 bg-white/80 backdrop-blur-sm border-b border-slate-200 z-10 header-fixed"
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.preventDefault()}
+        onTouchEnd={(e) => e.stopPropagation()}
+        style={{ touchAction: 'none' }}
+      >
           <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-lg sm:text-2xl lg:text-3xl font-light text-slate-900">
@@ -435,8 +436,12 @@ function App() {
           </div>
         </div>
 
-        {/* Main content */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Main content - Scrollable */}
+        <div 
+          className="flex-1 overflow-y-auto"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           <div className="max-w-2xl mx-auto w-full px-4 py-8 sm:px-6">
               <div className="mb-8">
                 {currentMessage && !editing && (
@@ -491,7 +496,6 @@ function App() {
             {isSyncing ? 'Syncing...' : 'Unsaved changes'}
           </div>
         )}
-      </div>
     </div>
   );
 }
