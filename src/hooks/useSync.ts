@@ -14,15 +14,14 @@ export function useSync(
   const syncWithServer = useCallback(async (): Promise<boolean> => {
     if (isSyncing) return false;
 
-    setIsSyncing(true);
     try {
       // Get current entries at sync time
       const entries = getEntries();
       
       // Get our last sync timestamp
       const lastSync = await getLastSyncTime();
-      
-      // Step 1: Get changes from server since our last sync
+
+      // Step 1: Check for changes from server since our last sync
       let serverEntries: Entry[] = [];
       try {
         const response = await fetch('/api/sync', {
@@ -44,7 +43,19 @@ export function useSync(
         console.error('Error pulling changes from server:', error);
       }
 
-      // Step 2: Merge server entries with local entries (most recent timestamp wins)
+      // Step 2: Check for local changes since last sync
+      const localChanges = lastSync ? await getEntriesModifiedSince(lastSync) : Object.values(entries);
+      
+      // Only proceed with sync if there are changes to process
+      if (serverEntries.length === 0 && localChanges.length === 0) {
+        console.log('No changes to sync');
+        return true; // Successfully synced (nothing to sync)
+      }
+
+      // Now we know there are changes, so set isSyncing = true
+      setIsSyncing(true);
+
+      // Step 3: Merge server entries with local entries (most recent timestamp wins)
       const mergedEntries = { ...entries };
       let hasLocalChanges = false;
 
@@ -62,8 +73,7 @@ export function useSync(
         await saveEntries(Object.values(mergedEntries));
       }
 
-      // Step 3: Get local changes since last sync and send to server
-      const localChanges = lastSync ? await getEntriesModifiedSince(lastSync) : Object.values(entries);
+      // Step 4: Send local changes to server if any
       
       if (localChanges.length > 0) {
         // Send local changes in chunks
@@ -103,7 +113,7 @@ export function useSync(
         }
       }
 
-      // Step 4: Update last sync timestamp
+      // Step 5: Update last sync timestamp
       const newSyncTime = new Date().toISOString();
       await setLastSyncTime(newSyncTime);
       setLastSyncTimeState(newSyncTime);
