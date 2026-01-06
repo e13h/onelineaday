@@ -6,7 +6,7 @@ import { useGestures } from './hooks/useGestures';
 import { getCatchupCounts, formatDateDisplay, getStartDate, formatDateString } from './utils/dateUtils';
 import CatchupBadge from './components/CatchupBadge';
 import OnThisDayList from './components/OnThisDayList';
-import EntryEditor from './components/EntryEditor';
+import EntryEditor, { EntryEditorHandle } from './components/EntryEditor';
 
 function App() {
   const [currentDate, setCurrentDate] = useState(() => {
@@ -22,6 +22,7 @@ function App() {
   const [isInitializing, setIsInitializing] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const entryEditorRef = useRef<EntryEditorHandle>(null);
   const initialSyncDone = useRef(false);
   const syncDelayRef = useRef(10000); // Start with 10 seconds
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -44,6 +45,13 @@ function App() {
     getEntriesModifiedSince,
     saveEntries
   );
+  
+  // Callback to determine if touch gestures should be excluded
+  const shouldExcludeTouch = useCallback((element: Element) => {
+    // Disable all gestures when the textarea is focused/active
+    return entryEditorRef.current?.isTextareaActive() || false;
+  }, []);
+
   const { handleTouchStart, handleTouchEnd } = useGestures(
     (offset) => {
       const [currentYear, currentMonth, currentDay] = currentDate.split("-").map(Number);
@@ -51,7 +59,8 @@ function App() {
       newDate.setDate(newDate.getDate() + offset);
       setCurrentDate(formatDateString(newDate));
       setEditing(false);
-    }
+    },
+    shouldExcludeTouch
   );
 
   useEffect(() => {
@@ -477,6 +486,7 @@ function App() {
 
                 {(!currentMessage || editing) && (
                   <EntryEditor
+                    ref={entryEditorRef}
                     date={currentDate}
                     initialMessage={currentMessage}
                     onSave={handleSaveEntry}

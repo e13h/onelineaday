@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Check } from 'lucide-react';
 
 interface EntryEditorProps {
@@ -8,15 +8,27 @@ interface EntryEditorProps {
   isSaving: boolean;
 }
 
-export default function EntryEditor({
+export interface EntryEditorHandle {
+  isTextareaActive: () => boolean;
+  getTextareaElement: () => HTMLTextAreaElement | null;
+}
+
+const EntryEditor = forwardRef<EntryEditorHandle, EntryEditorProps>(({
   date,
   initialMessage,
   onSave,
   isSaving,
-}: EntryEditorProps) {
+}, ref) => {
   const [message, setMessage] = useState(initialMessage);
   const [hasChanged, setHasChanged] = useState(false);
+  const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    isTextareaActive: () => isTextareaFocused,
+    getTextareaElement: () => textareaRef.current
+  }), [isTextareaFocused]);
 
   useEffect(() => {
     setMessage(initialMessage);
@@ -52,7 +64,12 @@ export default function EntryEditor({
     setHasChanged(newMessage !== initialMessage);
   };
 
+  const handleFocus = () => {
+    setIsTextareaFocused(true);
+  };
+
   const handleBlur = async () => {
+    setIsTextareaFocused(false);
     // If there are unsaved changes and we're not currently saving, save immediately
     if (message !== initialMessage && !isSaving) {
       // Clear any pending auto-save timeout since we're saving now
@@ -68,8 +85,10 @@ export default function EntryEditor({
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
       <textarea
+        ref={textareaRef}
         value={message}
         onChange={handleChange}
+        onFocus={handleFocus}
         onBlur={handleBlur}
         placeholder="What's on your mind today?"
         className="w-full p-6 text-slate-700 placeholder-slate-400 focus:outline-none resize-none overflow-hidden"
@@ -108,4 +127,8 @@ export default function EntryEditor({
       </div>
     </div>
   );
-}
+});
+
+EntryEditor.displayName = 'EntryEditor';
+
+export default EntryEditor;
