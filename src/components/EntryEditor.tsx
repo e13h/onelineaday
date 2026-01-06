@@ -11,6 +11,7 @@ interface EntryEditorProps {
 export interface EntryEditorHandle {
   isTextareaActive: () => boolean;
   getTextareaElement: () => HTMLTextAreaElement | null;
+  focus: () => void;
 }
 
 const EntryEditor = forwardRef<EntryEditorHandle, EntryEditorProps>(({
@@ -27,13 +28,31 @@ const EntryEditor = forwardRef<EntryEditorHandle, EntryEditorProps>(({
 
   useImperativeHandle(ref, () => ({
     isTextareaActive: () => isTextareaFocused,
-    getTextareaElement: () => textareaRef.current
+    getTextareaElement: () => textareaRef.current,
+    focus: () => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        // Move cursor to end of existing text
+        const length = textareaRef.current.value.length;
+        textareaRef.current.setSelectionRange(length, length);
+      }
+    }
   }), [isTextareaFocused]);
 
   useEffect(() => {
     setMessage(initialMessage);
     setHasChanged(false);
   }, [date, initialMessage]);
+
+  // Auto-focus when component mounts
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      // Move cursor to end of existing text
+      const length = textareaRef.current.value.length;
+      textareaRef.current.setSelectionRange(length, length);
+    }
+  }, []);
 
   // Auto-save effect for new entries
   useEffect(() => {

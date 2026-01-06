@@ -461,7 +461,13 @@ function App() {
                     <div className="flex items-start justify-between mb-3">
                       <p className="text-slate-700 leading-relaxed">{currentMessage}</p>
                       <button
-                        onClick={() => setEditing(true)}
+                        onClick={() => {
+                          setEditing(true);
+                          // Use requestAnimationFrame for immediate focus that works on mobile
+                          requestAnimationFrame(() => {
+                            entryEditorRef.current?.focus();
+                          });
+                        }}
                         className="flex items-center gap-2 px-3 py-2 ml-2 bg-white hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors flex-shrink-0 text-sm text-slate-600 hover:text-slate-700"
                         title="Edit entry"
                       >
