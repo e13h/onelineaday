@@ -64,7 +64,7 @@ const EntryEditor = forwardRef<EntryEditorHandle, EntryEditorProps>(({
 
       // Set a new timeout for auto-save
       autoSaveTimeoutRef.current = setTimeout(async () => {
-        await onSave(date, message.trim());
+        await onSave(date, message);
         setHasChanged(false);
       }, 2000);
     }
@@ -89,16 +89,13 @@ const EntryEditor = forwardRef<EntryEditorHandle, EntryEditorProps>(({
 
   const handleBlur = async () => {
     setIsTextareaFocused(false);
-    // If there are unsaved changes and we're not currently saving, save immediately
-    if (message !== initialMessage && !isSaving) {
-      // Clear any pending auto-save timeout since we're saving now
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-        autoSaveTimeoutRef.current = undefined;
-      }
-      await onSave(date, message.trim());
-      setHasChanged(false);
+    // Clear any pending auto-save timeout since we're saving now
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+      autoSaveTimeoutRef.current = undefined;
     }
+    await onSave(date, message.trim());
+    setHasChanged(false);
   };
 
   return (
