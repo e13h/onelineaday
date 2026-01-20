@@ -99,7 +99,7 @@ const EntryEditor = forwardRef<EntryEditorHandle, EntryEditorProps>(({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
       <textarea
         ref={textareaRef}
         value={message}
@@ -107,37 +107,37 @@ const EntryEditor = forwardRef<EntryEditorHandle, EntryEditorProps>(({
         onFocus={handleFocus}
         onBlur={handleBlur}
         placeholder="What's on your mind today?"
-        className="w-full p-6 text-slate-700 placeholder-slate-400 focus:outline-none resize-none overflow-hidden"
+        className="w-full p-6 text-slate-700 dark:text-slate-300 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none resize-none overflow-hidden bg-transparent"
         rows={6}
         style={{ minHeight: '144px', maxHeight: '300px' }}
       />
 
-      <div className="px-6 pb-4 flex items-center justify-between border-t border-slate-200">
+      <div className="px-6 pb-4 flex items-center justify-between border-t border-slate-200 dark:border-slate-700">
         <div>
           {message === initialMessage && message.trim() === '' && (
-            <p className="text-xs text-slate-500">Start typing to save automatically</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Start typing to save automatically</p>
           )}
           {hasChanged && !isSaving && (
-            <div className="flex items-center gap-2 text-xs text-slate-500">
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
               <Check size={14} />
               Changes made
             </div>
           )}
           {isSaving && (
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-spin" />
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-spin" />
               Saving...
             </div>
           )}
           {!hasChanged && !isSaving && message.trim() !== '' && (
-            <div className="flex items-center gap-2 text-xs text-green-600">
+            <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
               <Check size={14} />
               Saved
             </div>
           )}
         </div>
         
-        <div className={`text-xs ${message.length > 200 ? 'text-amber-500' : 'text-slate-400'}`}>
+        <div className={`text-xs ${message.length > 200 ? 'text-amber-500 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'}`}>
           {message.length} {message.length === 1 ? 'character' : 'characters'}
         </div>
       </div>

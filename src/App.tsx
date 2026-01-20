@@ -7,6 +7,7 @@ import { getCatchupCounts, formatDateDisplay, getStartDate, formatDateString } f
 import CatchupBadge from './components/CatchupBadge';
 import OnThisDayList from './components/OnThisDayList';
 import EntryEditor, { EntryEditorHandle } from './components/EntryEditor';
+import ThemeToggle from './components/ThemeToggle';
 
 function App() {
   const [currentDate, setCurrentDate] = useState(() => {
@@ -315,11 +316,11 @@ function App() {
   return (
     <div
       ref={containerRef}
-      className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden flex flex-col"
+      className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 overflow-hidden flex flex-col"
     >
       {/* Header - Fixed at top */}
       <div 
-        className="flex-shrink-0 bg-white/80 backdrop-blur-sm border-b border-slate-200 z-10 header-fixed"
+        className="flex-shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 z-10 header-fixed"
         onTouchStart={(e) => e.stopPropagation()}
         onTouchMove={(e) => e.preventDefault()}
         onTouchEnd={(e) => e.stopPropagation()}
@@ -327,30 +328,31 @@ function App() {
       >
           <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
             <div className="flex items-center justify-between mb-4">
-              <h1 className="text-lg sm:text-2xl lg:text-3xl font-light text-slate-900">
+              <h1 className="text-lg sm:text-2xl lg:text-3xl font-light text-slate-900 dark:text-slate-100">
                 {formatDateDisplay(currentDate)}
               </h1>
               <div className="flex gap-2 relative">
                 {!isToday && (
                   <button
                     onClick={goToToday}
-                    className="today-button flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors text-sm"
+                    className="today-button flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/70 transition-colors text-sm"
                     onTouchStart={(e) => e.currentTarget.blur()}
                   >
                     <Home size={18} />
                     <span className="hidden sm:inline">Today</span>
                   </button>
                 )}
+                <ThemeToggle />
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
-                    className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                     title="Menu"
                   >
-                    <Menu size={20} className="text-slate-600" />
+                    <Menu size={20} className="text-slate-600 dark:text-slate-300" />
                   </button>
                   {showDropdown && (
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-[110]">
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-[110]">
                         <button
                           onClick={async () => {
                             setShowDropdown(false);
@@ -366,9 +368,9 @@ function App() {
                             }
                           }}
                           disabled={isSyncing}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-slate-50 text-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <RefreshCw size={18} className={`text-slate-600 ${isSyncing ? 'animate-spin' : ''}`} />
+                          <RefreshCw size={18} className={`text-slate-600 dark:text-slate-400 ${isSyncing ? 'animate-spin' : ''}`} />
                           {isSyncing ? 'Syncing...' : 'Sync Now'}
                         </button>
                         <button
@@ -376,9 +378,9 @@ function App() {
                             handleExport();
                             setShowDropdown(false);
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-slate-50 text-slate-700 transition-colors"
+                          className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
                         >
-                          <Download size={18} className="text-slate-600" />
+                          <Download size={18} className="text-slate-600 dark:text-slate-400" />
                           Export entries
                         </button>
                         <button
@@ -386,9 +388,9 @@ function App() {
                             handleImport();
                             setShowDropdown(false);
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-slate-50 text-slate-700 transition-colors"
+                          className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
                         >
-                          <Upload size={18} className="text-slate-600" />
+                          <Upload size={18} className="text-slate-600 dark:text-slate-400" />
                           Import entries
                         </button>
                       </div>
@@ -407,19 +409,19 @@ function App() {
                     setCurrentDate(formatDateString(prev));
                     setEditing(false);
                   }}
-                  className="nav-button p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
+                  className="nav-button p-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                   title="Previous day"
                   onTouchStart={(e) => e.currentTarget.blur()}
                 >
-                  <ChevronLeft size={24} className="text-slate-600" />
+                  <ChevronLeft size={24} className="text-slate-600 dark:text-slate-300" />
                 </button>
                 <CatchupBadge count={previousCount} side="left" />
               </div>
 
               <div className="flex-1 px-4">
-                <div className="h-1 bg-slate-200 rounded-full relative">
+                <div className="h-1 bg-slate-200 dark:bg-slate-700 rounded-full relative">
                   <div
-                    className="h-1 bg-blue-500 rounded-full transition-all"
+                    className="h-1 bg-blue-500 dark:bg-blue-400 rounded-full transition-all"
                     style={{
                       width: '10%',
                       marginLeft: currentDate > today ? '0%' : currentDate === today ? '45%' : '90%',
@@ -436,11 +438,11 @@ function App() {
                     setCurrentDate(formatDateString(next));
                     setEditing(false);
                   }}
-                  className="nav-button p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
+                  className="nav-button p-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                   title="Next day"
                   onTouchStart={(e) => e.currentTarget.blur()}
                 >
-                  <ChevronRight size={24} className="text-slate-600" />
+                  <ChevronRight size={24} className="text-slate-600 dark:text-slate-300" />
                 </button>
                 <CatchupBadge count={nextCount} side="right" />
               </div>
@@ -457,9 +459,9 @@ function App() {
           <div className="max-w-2xl mx-auto w-full px-4 py-8 sm:px-6">
               <div className="mb-8">
                 {currentMessage && !editing && (
-                  <div className="bg-slate-50 rounded-lg p-6 border border-slate-200">
+                  <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-6 border border-slate-200 dark:border-slate-700">
                     <div className="flex items-start justify-between mb-3">
-                      <p className="text-slate-700 leading-relaxed">{currentMessage}</p>
+                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{currentMessage}</p>
                       <button
                         onClick={() => {
                           setEditing(true);
@@ -468,21 +470,21 @@ function App() {
                             entryEditorRef.current?.focus();
                           });
                         }}
-                        className="flex items-center gap-2 px-3 py-2 ml-2 bg-white hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors flex-shrink-0 text-sm text-slate-600 hover:text-slate-700"
+                        className="flex items-center gap-2 px-3 py-2 ml-2 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg border border-slate-200 dark:border-slate-600 transition-colors flex-shrink-0 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-700 dark:hover:text-slate-200"
                         title="Edit entry"
                       >
-                        <Edit2 size={16} className="text-slate-500" />
+                        <Edit2 size={16} className="text-slate-500 dark:text-slate-400" />
                         Edit
                       </button>
                     </div>
                     {isSaving && (
-                      <div className="flex items-center gap-2 text-xs text-slate-500 mt-3">
-                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-3">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
                         Saving...
                       </div>
                     )}
                     {!isSaving && !unsyncedChanges && (
-                      <div className="flex items-center gap-2 text-xs text-green-600 mt-3">
+                      <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400 mt-3">
                         <Check size={14} />
                         Saved
                       </div>
@@ -503,7 +505,7 @@ function App() {
 
               {/* On This Day section */}
               <div className="mb-8">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">On this day</h2>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">On this day</h2>
                 <OnThisDayList currentDate={currentDate} entries={stringEntries} />
               </div>
           </div>
@@ -511,7 +513,7 @@ function App() {
 
         {/* Sync status indicator */}
         {(unsyncedChanges || isSyncing) && (
-          <div className="fixed bottom-4 right-4 px-4 py-2 bg-amber-100 border border-amber-400 rounded-lg text-sm text-amber-800">
+          <div className="fixed bottom-4 right-4 px-4 py-2 bg-amber-100 dark:bg-amber-900/80 border border-amber-400 dark:border-amber-500 rounded-lg text-sm text-amber-800 dark:text-amber-200">
             {isSyncing ? 'Syncing...' : 'Unsaved changes'}
           </div>
         )}
